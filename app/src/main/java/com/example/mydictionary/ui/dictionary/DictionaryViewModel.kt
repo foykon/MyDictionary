@@ -3,34 +3,33 @@ package com.example.mydictionary.ui.dictionary
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.WordDao
 import com.example.mydictionary.data.WordDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class DictionaryViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = WordDatabase.getDatabase(application)
-    private val wordDao = database.wordDao()
+    private val wordDao: WordDao
+    val words: LiveData<List<Word>>
 
-    val words: LiveData<List<Word>> = wordDao.getAllWords().asLiveData()
-
-    fun insertWord(word: Word) {
-        viewModelScope.launch {
-            wordDao.insertWord(word)
-        }
+    init {
+        val database = WordDatabase.getDatabase(application)
+        wordDao = database.wordDao()
+        words = wordDao.getAllWords()
     }
 
-    fun deleteWord(word: Word) {
-        viewModelScope.launch {
-            wordDao.deleteWord(word)
-        }
+    fun insert(word: Word) = viewModelScope.launch(Dispatchers.IO) {
+        wordDao.insert(word)
     }
 
-    fun updateWord(word: Word) {
-        viewModelScope.launch {
-            wordDao.updateWord(word)
-        }
+    fun delete(word: Word) = viewModelScope.launch(Dispatchers.IO) {
+        wordDao.delete(word)
+    }
+
+    fun update(word: Word) = viewModelScope.launch(Dispatchers.IO) {
+        wordDao.update(word)
     }
 
     fun deleteAllWords() {

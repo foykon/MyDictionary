@@ -25,6 +25,7 @@ import com.example.mydictionary.databinding.FragmentDictionaryBinding
 import com.example.mydictionary.databinding.ItemWordBinding
 import com.example.mydictionary.data.Word
 import com.bumptech.glide.Glide
+import com.example.mydictionary.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
@@ -108,7 +109,7 @@ class DictionaryFragment : Fragment() {
                 )
                 
                 sampleWords.forEach { word ->
-                    viewModel.insertWord(word)
+                    viewModel.insert(word)
                 }
             }
         }
@@ -224,10 +225,32 @@ class DictionaryFragment : Fragment() {
                         word = word,
                         imageUrl = "file://$imagePath"
                     )
-                    viewModel.insertWord(newWord)
+                    viewModel.insert(newWord)
                 }
             }
             .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun saveWord(word: String, imageUrl: String) {
+        val word = Word(word = word, imageUrl = imageUrl)
+        viewModel.insert(word)
+    }
+
+    private fun handleCameraResult(imageUrl: String) {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_word, null)
+        
+        AlertDialog.Builder(requireContext())
+            .setTitle("Kelime Ekle")
+            .setView(dialogView)
+            .setPositiveButton("Ekle") { dialog, _ ->
+                val wordInput = dialogView.findViewById<EditText>(R.id.wordInput)
+                val word = wordInput?.text.toString()
+                if (word.isNotBlank()) {
+                    saveWord(word, imageUrl)
+                }
+            }
+            .setNegativeButton("İptal", null)
             .show()
     }
 
