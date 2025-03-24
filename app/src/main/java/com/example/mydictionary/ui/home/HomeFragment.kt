@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import com.example.mydictionary.R
 import com.example.mydictionary.databinding.FragmentHomeBinding
 import com.example.mydictionary.ui.quiz.QuizFragment
+import com.example.mydictionary.ui.quiz.Quiz2Fragment
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -28,24 +29,24 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupQuizButtons() {
-        val quizCards = listOf(
-            binding.quizCard1,
-            binding.quizCard2,
-            binding.quizCard3,
-            binding.quizCard4,
-            binding.quizCard5
-        )
-
-        quizCards.forEach { card ->
-            card.setOnClickListener {
-                startQuiz()
-            }
+        binding.quizCard1.setOnClickListener {
+            startQuiz(1)
+        }
+        
+        binding.quizCard2.setOnClickListener {
+            startQuiz(2)
         }
     }
 
-    private fun startQuiz() {
+    private fun startQuiz(quizType: Int) {
+        val fragment = when (quizType) {
+            1 -> QuizFragment()
+            2 -> Quiz2Fragment()
+            else -> return
+        }
+        
         parentFragmentManager.beginTransaction()
-            .replace(R.id.flFragment, QuizFragment())
+            .replace(R.id.flFragment, fragment)
             .addToBackStack(null)
             .commit()
     }
