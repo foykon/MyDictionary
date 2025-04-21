@@ -3,11 +3,56 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Profile Screen"
-        android:textSize="24sp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
 
+        <TextView
+            android:id="@+id/tvProfileTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Profile"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"/>
+
+        <TextView
+            android:id="@+id/tvNameLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Name:"
+            android:layout_marginTop="24dp"/>
+
+        <EditText
+            android:id="@+id/etProfileName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter your name"
+            android:inputType="textPersonName"/>
+
+        <Button
+            android:id="@+id/btnSaveName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save Name"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:id="@+id/tvScoreLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Total Score:"
+            android:layout_marginTop="24dp"/>
+
+        <TextView
+            android:id="@+id/tvTotalScore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="24sp"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
 </FrameLayout> 

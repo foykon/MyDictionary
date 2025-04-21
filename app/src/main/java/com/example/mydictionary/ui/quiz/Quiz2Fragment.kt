@@ -1,5 +1,6 @@
 package com.example.mydictionary.ui.quiz
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -223,6 +224,11 @@ class Quiz2Fragment : Fragment() {
     }
 
     private fun showFinalResult() {
+        // Birikmiş toplam puanı güncelle
+        val prefs = requireContext().getSharedPreferences("quiz_prefs", Context.MODE_PRIVATE)
+        val prev = prefs.getInt("total_score", 0)
+        prefs.edit().putInt("total_score", prev + score).apply()
+        
         val message = when (score) {
             50 -> "Mükemmel! Kelime haznen çok iyi!"
             in 40..49 -> "Harika! Neredeyse mükemmel!"

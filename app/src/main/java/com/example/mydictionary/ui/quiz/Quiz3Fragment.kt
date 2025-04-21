@@ -1,5 +1,6 @@
 package com.example.mydictionary.ui.quiz
 
+import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.LayoutInflater
@@ -237,17 +238,22 @@ class Quiz3Fragment : Fragment(), TextToSpeech.OnInitListener {
     }
 
     private fun showFinalResult() {
+        // Birikmiş toplam puanı güncelle
+        val prefs = requireContext().getSharedPreferences("quiz_prefs", Context.MODE_PRIVATE)
+        val prev = prefs.getInt("total_score", 0)
+        prefs.edit().putInt("total_score", prev + score).apply()
+        
         val message = when (score) {
-            50 -> "Mükemmel! Kelime haznen çok iyi!"
-            in 40..49 -> "Harika! Neredeyse mükemmel!"
-            in 30..39 -> "İyi iş! Pratik yapmaya devam et!"
-            in 20..29 -> "Fena değil! Daha iyisini yapabilirsin!"
-            else -> "Öğrenmeye devam et! Pratik yapmak mükemmelleştirir!"
+            50 -> "Awesome!"
+            in 40..49 -> "Well done!"
+            in 30..39 -> "Good work! Keep practicing!"
+            in 20..29 -> "Nice try! You can do better!"
+            else -> "Keep learning! Practice makes perfect!"
         }
         
         AlertDialog.Builder(requireContext())
-            .setTitle("Quiz Tamamlandı!")
-            .setMessage("Puanın: $score/50\n\n$message")
+            .setTitle("Quiz Complete!")
+            .setMessage("Your score: $score/50\n\n$message")
             .setPositiveButton("Tekrar Dene") { _, _ ->
                 // Quiz'i sıfırla
                 score = 0
