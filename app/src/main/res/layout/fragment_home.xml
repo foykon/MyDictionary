@@ -10,7 +10,7 @@
         android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Kelime Quizleri"
+        android:text="Word Quizzes"
         android:textSize="28sp"
         android:textStyle="bold"
         android:textColor="#4A90E2"
@@ -41,7 +41,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Resimden Kelimeyi Bul"
+                android:text="Find Word from Image"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black"
@@ -50,7 +50,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bir resim gösterilecek ve bu resmin hangi kelimeyi temsil ettiğini bulman gerekecek."
+                android:text="An image will be shown and you have to guess the word it represents."
                 android:textSize="16sp"
                 android:textColor="@android:color/black"
                 android:layout_marginTop="8dp"
@@ -82,7 +82,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Kelimeyi Resimle Eşleştir"
+                android:text="Match Word to Image"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black"
@@ -91,7 +91,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="4 resim gösterilecek ve verilen kelimenin hangi resme ait olduğunu bulman gerekecek."
+                android:text="You will see 4 images and you need to find which one matches the given word."
                 android:textSize="16sp"
                 android:textColor="@android:color/black"
                 android:layout_marginTop="8dp"
@@ -99,6 +99,82 @@
 
         </LinearLayout>
 
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/quizCard3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="#87CEEB"
+        app:rippleColor="#33000000"
+        app:layout_constraintTop_toBottomOf="@id/quizCard2">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Listen to the Word and Guess"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Listen to the pronunciation and choose the correct word."
+                android:textSize="16sp"
+                android:layout_marginTop="8dp"
+                android:gravity="center"/>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/quizCard5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="#FFA07A"
+        app:rippleColor="#33000000"
+        app:layout_constraintTop_toBottomOf="@id/quizCard3">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speech Recognition Quiz"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speak the word for the image and check."
+                android:textSize="16sp"
+                android:layout_marginTop="8dp"
+                android:gravity="center"/>
+
+        </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout> 
