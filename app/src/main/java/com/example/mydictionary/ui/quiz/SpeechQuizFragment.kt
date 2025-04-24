@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.example.mydictionary.databinding.FragmentSpeechQuizBinding
 import com.example.mydictionary.data.Word
+import com.example.mydictionary.data.QuizType
 import com.example.mydictionary.ui.dictionary.DictionaryViewModel
 import java.util.Locale
 
@@ -32,11 +33,12 @@ class SpeechQuizFragment : Fragment() {
 
     private lateinit var viewModel: DictionaryViewModel
     private lateinit var speechLauncher: ActivityResultLauncher<Intent>
-    private lateinit var currentWord: Word
+    private var currentWord: Word? = null
     private var currentQuestionIndex = 0
     private var score = 0
     private val totalQuestions = 5
     private val REQUEST_MICROPHONE_PERMISSION = 1
+    private var currentUnitId: Int = 1
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,6 +52,7 @@ class SpeechQuizFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel = ViewModelProvider(requireActivity())[DictionaryViewModel::class.java]
+        currentUnitId = arguments?.getInt("unitId", 1) ?: 1
 
         speechLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
@@ -60,20 +63,7 @@ class SpeechQuizFragment : Fragment() {
                 val heard = matches?.firstOrNull().orEmpty()
                 binding.tvRecognized.text = heard
 
-                if (heard.equals(currentWord.word, ignoreCase = true)) {
-                    score += 10 // Doğru cevap için puan ekle
-                    Toast.makeText(context, "Correct! ${currentWord.word}", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Wrong. The correct word was: ${currentWord.word}", Toast.LENGTH_SHORT).show()
-                }
-
-                // Sonraki soruya geç
-                currentQuestionIndex++
-                if (currentQuestionIndex < totalQuestions) {
-                    loadNextQuestion()
-                } else {
-                    showFinalResult()
-                }
+                checkAnswer(heard)
             }
         }
 
@@ -81,7 +71,7 @@ class SpeechQuizFragment : Fragment() {
             ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_MICROPHONE_PERMISSION)
         }
 
-        loadNextQuestion()
+        setupQuiz()
 
         binding.btnSpeak.setOnClickListener {
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -97,16 +87,65 @@ class SpeechQuizFragment : Fragment() {
         }
     }
 
-    private fun loadNextQuestion() {
+    private fun setupQuiz() {
         viewModel.words.observe(viewLifecycleOwner) { words ->
             if (words.isNotEmpty()) {
                 currentWord = words.shuffled().first()
                 Glide.with(this)
-                    .load(currentWord.imageUrl)
+                    .load(currentWord?.imageUrl)
                     .into(binding.speechQuizImage)
             } else {
                 Toast.makeText(context, "Please add at least one word first.", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    private fun checkAnswer(recognizedText: String) {
+        val currentWord = currentWord ?: return
+        val isCorrect = recognizedText.equals(currentWord.word, ignoreCase = true)
+        
+        if (isCorrect) {
+            score += 10
+            binding.tvScore.text = "Score: $score"
+            binding.tvResult.text = "Correct!"
+            binding.tvResult.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark))
+            
+            // Move to next question after delay
+            view?.postDelayed({
+                if (currentQuestionIndex < totalQuestions - 1) {
+                    currentQuestionIndex++
+                    setupQuiz()
+                } else {
+                    // Quiz complete
+                    markQuizAsCompleted()
+                    showFinalResult()
+                }
+            }, 1000)
+        } else {
+            binding.tvResult.text = "Try again!"
+            binding.tvResult.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark))
+        }
+    }
+
+    private fun markQuizAsCompleted() {
+        QuizType.SPEECH_QUIZ.markAsCompleted(currentUnitId)
+        
+        // Save completion status with unit ID
+        val prefs = requireContext().getSharedPreferences("quiz_prefs", Context.MODE_PRIVATE)
+        val completedQuizzes = prefs.getStringSet("completed_quizzes", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        completedQuizzes.add("${currentUnitId}_${QuizType.SPEECH_QUIZ.name}")
+        prefs.edit().putStringSet("completed_quizzes", completedQuizzes).apply()
+
+        // Check if all quizzes in the unit are completed
+        val allQuizzesCompleted = QuizType.values().all { quizType ->
+            completedQuizzes.contains("${currentUnitId}_${quizType.name}")
+        }
+
+        if (allQuizzesCompleted) {
+            // Mark unit as completed
+            val completedUnits = prefs.getStringSet("completed_units", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+            completedUnits.add(currentUnitId.toString())
+            prefs.edit().putStringSet("completed_units", completedUnits).apply()
         }
     }
 

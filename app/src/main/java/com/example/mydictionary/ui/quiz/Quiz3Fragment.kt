@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.example.mydictionary.R
+import com.example.mydictionary.data.QuizType
 import com.example.mydictionary.data.Word
 import com.example.mydictionary.databinding.FragmentQuiz3Binding
 import com.example.mydictionary.ui.dictionary.DictionaryViewModel
@@ -28,6 +29,7 @@ class Quiz3Fragment : Fragment(), TextToSpeech.OnInitListener {
     private lateinit var questions: List<Quiz3Question>
     private var selectedAnswerCard: MaterialCardView? = null
     private lateinit var textToSpeech: TextToSpeech
+    private var currentUnitId: Int = 1
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,6 +43,7 @@ class Quiz3Fragment : Fragment(), TextToSpeech.OnInitListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(requireActivity())[DictionaryViewModel::class.java]
+        currentUnitId = arguments?.getInt("unitId", 1) ?: 1
         textToSpeech = TextToSpeech(requireContext(), this)
         setupQuiz()
     }
@@ -109,8 +112,9 @@ class Quiz3Fragment : Fragment(), TextToSpeech.OnInitListener {
             Pair(word, answerImages[index])
         }.shuffled()
         
-        // Tüm resimleri göster
+        // Tüm resimleri göster ve tag'leri ayarla
         shuffledPairs.forEach { (word, imageView) ->
+            imageView.tag = word.imageUrl
             Glide.with(this)
                 .load(word.imageUrl)
                 .into(imageView)
@@ -151,75 +155,44 @@ class Quiz3Fragment : Fragment(), TextToSpeech.OnInitListener {
     }
 
     private fun handleAnswerSelection(selectedCard: MaterialCardView) {
-        if (!selectedCard.isEnabled) return
-
-        // Tüm kartları geçici olarak devre dışı bırak
-        disableAllCards()
+        // Clear previous selection
+        selectedAnswerCard?.isChecked = false
+        
+        // Mark new selection
+        selectedCard.isChecked = true
         selectedAnswerCard = selectedCard
 
-        // Seçilen resmin kelimesini bul
-        val selectedWord = when (selectedCard) {
-            binding.answer1Card -> questions[currentQuestionIndex].allImages[0]
-            binding.answer2Card -> questions[currentQuestionIndex].allImages[1]
-            binding.answer3Card -> questions[currentQuestionIndex].allImages[2]
-            binding.answer4Card -> questions[currentQuestionIndex].allImages[3]
+        // Check answer
+        val selectedImageUrl = when (selectedCard) {
+            binding.answer1Card -> binding.answer1.tag
+            binding.answer2Card -> binding.answer2.tag
+            binding.answer3Card -> binding.answer3.tag
+            binding.answer4Card -> binding.answer4.tag
             else -> null
         }
 
-        // Doğru cevabı kontrol et
-        if (selectedWord?.id == questions[currentQuestionIndex].correctWord.id) {
-            // Doğru cevap animasyonu ve geri bildirimi
+        val currentQuestion = questions[currentQuestionIndex]
+        if (selectedImageUrl == currentQuestion.correctWord.imageUrl) {
+            // Correct answer
             score += 10
-            selectedCard.setCardBackgroundColor(resources.getColor(android.R.color.holo_green_light, null))
-            selectedCard.strokeWidth = 4
-            selectedCard.strokeColor = resources.getColor(android.R.color.holo_green_dark, null)
             val bounceAnimation = AnimationUtils.loadAnimation(context, R.anim.bounce)
             selectedCard.startAnimation(bounceAnimation)
             
-            Toast.makeText(context, "Doğru! +10 puan", Toast.LENGTH_SHORT).show()
-            
+            // Move to next question after delay
             selectedCard.postDelayed({
                 if (currentQuestionIndex < questions.size - 1) {
                     currentQuestionIndex++
                     showQuestion(currentQuestionIndex)
                 } else {
+                    // Quiz complete
+                    markQuizAsCompleted()
                     showFinalResult()
                 }
             }, 1000)
         } else {
-            // Yanlış cevap animasyonu ve geri bildirimi
-            selectedCard.setCardBackgroundColor(resources.getColor(android.R.color.holo_red_light, null))
-            selectedCard.strokeWidth = 4
-            selectedCard.strokeColor = resources.getColor(android.R.color.holo_red_dark, null)
+            // Wrong answer
             val shakeAnimation = AnimationUtils.loadAnimation(context, R.anim.shake)
             selectedCard.startAnimation(shakeAnimation)
-            
-            // Doğru cevabı göster
-            val correctImageIndex = questions[currentQuestionIndex].allImages.indexOf(questions[currentQuestionIndex].correctWord)
-            val correctCard = when (correctImageIndex) {
-                0 -> binding.answer1Card
-                1 -> binding.answer2Card
-                2 -> binding.answer3Card
-                3 -> binding.answer4Card
-                else -> null
-            }
-            
-            correctCard?.let {
-                it.setCardBackgroundColor(resources.getColor(android.R.color.holo_green_light, null))
-                it.strokeWidth = 4
-                it.strokeColor = resources.getColor(android.R.color.holo_green_dark, null)
-            }
-            
-            Toast.makeText(context, "Tekrar dene!", Toast.LENGTH_SHORT).show()
-            
-            selectedCard.postDelayed({
-                if (currentQuestionIndex < questions.size - 1) {
-                    currentQuestionIndex++
-                    showQuestion(currentQuestionIndex)
-                } else {
-                    showFinalResult()
-                }
-            }, 1500)
         }
     }
 
@@ -265,6 +238,28 @@ class Quiz3Fragment : Fragment(), TextToSpeech.OnInitListener {
             }
             .setCancelable(false)
             .show()
+    }
+
+    private fun markQuizAsCompleted() {
+        QuizType.SOUND_QUIZ.markAsCompleted(currentUnitId)
+        
+        // Save completion status with unit ID
+        val prefs = requireContext().getSharedPreferences("quiz_prefs", Context.MODE_PRIVATE)
+        val completedQuizzes = prefs.getStringSet("completed_quizzes", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        completedQuizzes.add("${currentUnitId}_${QuizType.SOUND_QUIZ.name}")
+        prefs.edit().putStringSet("completed_quizzes", completedQuizzes).apply()
+
+        // Check if all quizzes in the unit are completed
+        val allQuizzesCompleted = QuizType.values().all { quizType ->
+            completedQuizzes.contains("${currentUnitId}_${quizType.name}")
+        }
+
+        if (allQuizzesCompleted) {
+            // Mark unit as completed
+            val completedUnits = prefs.getStringSet("completed_units", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+            completedUnits.add(currentUnitId.toString())
+            prefs.edit().putStringSet("completed_units", completedUnits).apply()
+        }
     }
 
     override fun onDestroyView() {
