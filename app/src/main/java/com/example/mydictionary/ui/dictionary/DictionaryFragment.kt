@@ -34,6 +34,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.widget.Toast
 
 class DictionaryFragment : Fragment() {
     private var _binding: FragmentDictionaryBinding? = null
@@ -201,35 +202,45 @@ class DictionaryFragment : Fragment() {
         
         labeler.process(image)
             .addOnSuccessListener { labels ->
-                // En yüksek güven skoruna sahip etiketi al
-                val bestLabel = labels.maxByOrNull { it.confidence }
-                if (bestLabel != null) {
-                    input.setText(bestLabel.text)
-                    input.isEnabled = true // Kullanıcının düzenlemesine izin ver
+                // En yüksek güven skoruna sahip 3 etiketi al
+                val topLabels = labels.sortedByDescending { it.confidence }
+                    .take(3)
+                    .filter { it.confidence > 0.7f } // %70'den yüksek güven skoruna sahip etiketleri filtrele
+                
+                if (topLabels.isNotEmpty()) {
+                    // Birden fazla yüksek güvenli tahmin varsa, kullanıcıya seçenek sun
+                    if (topLabels.size > 1) {
+                        val options = topLabels.map { it.text }.toTypedArray()
+                        AlertDialog.Builder(requireContext())
+                            .setTitle("Tahmin Edilen Kelimeler")
+                            .setItems(options) { _, which ->
+                                input.setText(options[which])
+                                input.isEnabled = true
+                            }
+                            .setNeutralButton("Manuel Giriş") { _, _ ->
+                                input.setText("")
+                                input.isEnabled = true
+                                input.hint = "Kelimeyi manuel girin"
+                            }
+                            .setCancelable(false)
+                            .show()
+                    } else {
+                        // Tek yüksek güvenli tahmin varsa, doğrudan göster
+                        input.setText(topLabels[0].text)
+                        input.isEnabled = true
+                    }
+                } else {
+                    // Yüksek güvenli tahmin yoksa manuel giriş iste
+                    input.isEnabled = true
+                    input.hint = "Kelimeyi manuel girin"
                 }
             }
             .addOnFailureListener { e ->
                 // Hata durumunda kullanıcıya bilgi ver
                 input.isEnabled = true
-                input.hint = "Enter word manually"
+                input.hint = "Kelimeyi manuel girin"
+                Toast.makeText(context, "Görüntü analizi başarısız oldu", Toast.LENGTH_SHORT).show()
             }
-
-        AlertDialog.Builder(requireContext())
-            .setTitle("Add New Word")
-            .setMessage("Enter the word for this image:")
-            .setView(input)
-            .setPositiveButton("Add") { _, _ ->
-                val word = input.text.toString()
-                if (word.isNotBlank()) {
-                    val newWord = Word(
-                        word = word,
-                        imageUrl = "file://$imagePath"
-                    )
-                    viewModel.insert(newWord)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
     }
 
     private fun saveWord(word: String, imageUrl: String) {
