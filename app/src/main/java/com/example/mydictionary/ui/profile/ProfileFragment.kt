@@ -15,9 +15,12 @@ import com.example.mydictionary.User
 import com.example.mydictionary.UserDatabase
 import com.example.mydictionary.UserRepository
 import com.example.mydictionary.databinding.FragmentProfileBinding
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlin.random.Random
 
 class ProfileFragment : Fragment() {
     private var _binding: FragmentProfileBinding? = null
@@ -30,6 +33,7 @@ class ProfileFragment : Fragment() {
     private lateinit var leaderboardAdapter: LeaderboardAdapter
     private lateinit var userRepository: UserRepository
     private var currentUserId: String = ""
+    private var scoreUpdateJob: Job? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -73,6 +77,9 @@ class ProfileFragment : Fragment() {
             }
         }
 
+        // Start random score updates
+        startRandomScoreUpdates()
+
         // İsmi kaydet butonu
         binding.btnSaveName.setOnClickListener {
             val name = binding.etProfileName.text.toString().trim()
@@ -84,6 +91,32 @@ class ProfileFragment : Fragment() {
                 }
             } else {
                 Toast.makeText(context, "Please enter a name", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun startRandomScoreUpdates() {
+        scoreUpdateJob = lifecycleScope.launch {
+            while (isActive) {
+                // Random delay between 5 and 15 seconds
+                delay(Random.nextLong(5000, 15000))
+                updateRandomUserScore()
+            }
+        }
+    }
+
+    private suspend fun updateRandomUserScore() {
+        val users = userRepository.allUsers.first()
+        if (users.isNotEmpty()) {
+            // Filter out current user
+            val otherUsers = users.filter { it.id != currentUserId }
+            if (otherUsers.isNotEmpty()) {
+                // Select random user
+                val randomUser = otherUsers.random()
+                // Add random score that is a multiple of 10 (10, 20, 30, 40, or 50)
+                val scoreIncrease = Random.nextInt(1, 6) * 10
+                val newScore = randomUser.score + scoreIncrease
+                userRepository.updateUserScore(randomUser.id, newScore)
             }
         }
     }
@@ -105,11 +138,11 @@ class ProfileFragment : Fragment() {
 
     private suspend fun addExampleUsers() {
         val exampleUsers = listOf(
-            User(UUID.randomUUID().toString(), "John", 150),
-            User(UUID.randomUUID().toString(), "Emma", 120),
-            User(UUID.randomUUID().toString(), "Michael", 100),
-            User(UUID.randomUUID().toString(), "Sophia", 90),
-            User(UUID.randomUUID().toString(), "David", 80)
+            User(UUID.randomUUID().toString(), "Furkan YILDIZ", 150),
+            User(UUID.randomUUID().toString(), "Mert ÇALIŞKAN", 120),
+            User(UUID.randomUUID().toString(), "Ali DEMİR", 100),
+            User(UUID.randomUUID().toString(), "Yunus EMRE", 90),
+            User(UUID.randomUUID().toString(), "Senan DEMİR", 80)
         )
         exampleUsers.forEach { user ->
             userRepository.insertUser(user)
@@ -128,6 +161,7 @@ class ProfileFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        scoreUpdateJob?.cancel()
         _binding = null
     }
 } 
